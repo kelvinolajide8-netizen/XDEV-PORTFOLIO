@@ -4,12 +4,14 @@ import { supabase } from '../lib/supabase'
 import ScrollReveal from '../components/ScrollReveal'
 import ProjectCard from '../components/ProjectCard'
 import ImageGallery from '../components/ImageGallery'
-import { GitHubIcon, LinkedInIcon, TwitterIcon, InstagramIcon, FacebookIcon } from '../components/SocialIcons'
+import { SocialIcon } from '../components/SocialIcons'
 
 export default function Home() {
   const [projects, setProjects] = useState([])
   const [tools, setTools] = useState([])
   const [skills, setSkills] = useState([])
+  const [about, setAbout] = useState(null)
+  const [socials, setSocials] = useState([])
   const [loading, setLoading] = useState(true)
   const [galleryProject, setGalleryProject] = useState(null)
 
@@ -18,7 +20,7 @@ export default function Home() {
   }, [])
 
   async function loadData() {
-    const [projRes, toolsRes, langRes] = await Promise.all([
+    const [projRes, toolsRes, langRes, aboutRes, socialsRes] = await Promise.all([
       supabase
         .from('projects')
         .select('*, project_languages(language)')
@@ -27,6 +29,8 @@ export default function Home() {
         .limit(6),
       supabase.from('tools').select('*').order('name'),
       supabase.from('project_languages').select('language'),
+      supabase.from('about_info').select('*').limit(1).maybeSingle(),
+      supabase.from('social_links').select('*').order('sort_order'),
     ])
 
     const featured = (projRes.data || []).map((p) => ({
@@ -35,8 +39,9 @@ export default function Home() {
     }))
     setProjects(featured)
     setTools(toolsRes.data || [])
+    setAbout(aboutRes.data)
+    setSocials(socialsRes.data || [])
 
-    // Auto-calculate skills from language frequency
     const langCounts = {}
     ;(langRes.data || []).forEach((row) => {
       langCounts[row.language] = (langCounts[row.language] || 0) + 1
@@ -57,7 +62,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero Section */}
       <section className="hero">
         <div className="hero-content">
           <p style={{ color: 'var(--secondary)', fontWeight: 500, marginBottom: '0.5rem' }}>
@@ -77,16 +81,30 @@ export default function Home() {
         <h2 className="section-title">About <span>Me</span></h2>
         <div className="about">
           <ScrollReveal className="about-image">
-            <div className="about-image-placeholder">👨‍💻</div>
+            {about?.profile_image_url ? (
+              <img
+                src={about.profile_image_url}
+                alt="Profile"
+                style={{
+                  width: '100%',
+                  aspectRatio: 1,
+                  borderRadius: '20px',
+                  objectFit: 'cover',
+                  border: '2px solid rgba(108, 92, 231, 0.3)',
+                }}
+              />
+            ) : (
+              <div className="about-image-placeholder">👨‍💻</div>
+            )}
             <div className="experience-badge">
-              <span className="number">1+</span>
-              <span className="text">Years Exp.</span>
+              <span className="number">{about?.experience_number || '1+'}</span>
+              <span className="text">{about?.experience_text || 'Years Exp.'}</span>
             </div>
           </ScrollReveal>
           <ScrollReveal className="about-content">
-            <h3>Passionate about creating amazing digital experiences</h3>
-            <p>I'm a full-stack developer with a love for clean code and beautiful design. I specialize in building modern web applications that are fast, accessible, and user-friendly.</p>
-            <p>When I'm not coding, you'll find me exploring new technologies, contributing to open-source projects, or enjoying a good cup of coffee while sketching out new ideas.</p>
+            <h3>{about?.about_heading || 'Passionate about creating amazing digital experiences'}</h3>
+            <p>{about?.about_paragraph_1 || "I'm a full-stack developer with a love for clean code and beautiful design. I specialize in building modern web applications that are fast, accessible, and user-friendly."}</p>
+            <p>{about?.about_paragraph_2 || "When I'm not coding, you'll find me exploring new technologies, contributing to open-source projects, or enjoying a good cup of coffee while sketching out new ideas."}</p>
             <div className="stats">
               <div className="stat-item">
                 <h4>{projects.length}+</h4>
@@ -139,7 +157,11 @@ export default function Home() {
             <div className="tools-grid">
               {tools.map((tool) => (
                 <div className="tool-item" key={tool.id}>
-                  <div className="tool-icon" />
+                  {tool.icon_url ? (
+                    <img src={tool.icon_url} alt={tool.name} style={{ width: 20, height: 20, borderRadius: 4 }} />
+                  ) : (
+                    <div className="tool-icon" />
+                  )}
                   <span>{tool.name}</span>
                 </div>
               ))}
@@ -194,13 +216,23 @@ export default function Home() {
                 <p>+2348145243739</p>
               </div>
             </div>
-            <div className="social-links">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="GitHub"><GitHubIcon /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="LinkedIn"><LinkedInIcon /></a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Twitter"><TwitterIcon /></a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Instagram"><InstagramIcon /></a>
-              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="social-link" aria-label="Facebook"><FacebookIcon /></a>
-            </div>
+            {socials.length > 0 && (
+              <div className="social-links">
+                {socials.map((social) => (
+                  <a
+                    key={social.id}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="social-link"
+                    aria-label={social.display_name}
+                    title={social.display_name}
+                  >
+                    <SocialIcon platform={social.platform} />
+                  </a>
+                ))}
+              </div>
+            )}
           </ScrollReveal>
 
           <ContactForm />

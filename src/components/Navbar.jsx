@@ -22,7 +22,6 @@ export default function Navbar() {
         <ul className={`nav-links ${menuOpen ? 'active' : ''}`} onClick={() => setMenuOpen(false)}>
           <li><NavLink to="/" className={linkClass} end>Home</NavLink></li>
           <li><NavLink to="/projects" className={linkClass}>Projects</NavLink></li>
-          <li><NavLink to="/admin" className={linkClass}>Admin</NavLink></li>
           <li><a href="/#about">About</a></li>
           <li><a href="/#contact">Contact</a></li>
         </ul>
