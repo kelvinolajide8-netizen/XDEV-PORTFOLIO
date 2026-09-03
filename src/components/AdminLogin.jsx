@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAdminAuth } from '../lib/adminAuth'
 import { X, Lock, User } from 'lucide-react'
 
-export default function AdminLogin({ onClose, onSuccess }) {
+export default function AdminLogin({ onClose }) {
   const { login } = useAdminAuth()
+  const navigate = useNavigate()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -12,7 +14,8 @@ export default function AdminLogin({ onClose, onSuccess }) {
     e.preventDefault()
     const success = login(username, password)
     if (success) {
-      onSuccess()
+      onClose()
+      navigate('/admin', { replace: true })
     } else {
       setError('Invalid username or password')
     }
